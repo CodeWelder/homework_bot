@@ -19,9 +19,9 @@ from exceptions import (
 
 # Загрузка переменных окружения
 load_dotenv()
-PRACTICUM_TOKEN: Optional[str] = getenv('PRACTICUM_TOKEN')
-TELEGRAM_TOKEN: Optional[str] = getenv('TELEGRAM_TOKEN')
-TELEGRAM_CHAT_ID: Optional[str] = getenv('TELEGRAM_CHAT_ID')
+PRACTICUM_TOKEN = getenv('PRACTICUM_TOKEN')
+TELEGRAM_TOKEN = getenv('TELEGRAM_TOKEN')
+TELEGRAM_CHAT_ID = getenv('TELEGRAM_CHAT_ID')
 
 RETRY_PERIOD: int = 600  # 10 минут
 TIME_WINDOW: int = 60 * 60 * 24 * 30  # 30 дней
@@ -164,7 +164,7 @@ def main() -> None:
     Подождать некоторое время и вернуться в пункт 1.
     """
     check_tokens()
-    bot: Bot = Bot(token=str(TELEGRAM_TOKEN))
+    bot: Bot = Bot(token=TELEGRAM_TOKEN)
 
     while True:
         try:
