@@ -66,7 +66,7 @@ def check_tokens() -> None:
         )
 
 
-def send_message(bot: Bot, message: str) -> None:
+def send_message(bot, message: str) -> None:
     """Отправляет сообщение в Telegram чат.
     Чат определяется переменной окружения TELEGRAM_CHAT_ID.
     Принимает на вход два параметра:
