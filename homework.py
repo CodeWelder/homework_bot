@@ -1,5 +1,6 @@
 import time
 import logging
+import sys
 from os import getenv
 from http import HTTPStatus
 from typing import Optional, Dict, List, Any
@@ -7,11 +8,11 @@ from typing import Optional, Dict, List, Any
 import requests
 
 from telegram import Bot
+from telegram.error import TelegramError
 
 from dotenv import load_dotenv
 
 from exceptions import (
-    TokensAreNone,
     APIReturnsIncorrectHTTPStatus,
     APIRequestException,
     APIReturnsIncorrectHomeworkData,
@@ -52,17 +53,23 @@ def check_tokens() -> None:
         'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID,
     }
 
+    print(TOKENS_DICT)
+
     tokens_are_none: List[str] = list(
-        {key: value for key, value in TOKENS_DICT.items() if value is None}
+        {
+            key: value for key, value
+            in TOKENS_DICT.items()
+            if value in [None, '']
+        }
     )
+    print(tokens_are_none)
     ERROR_MESSAGE_TEMPLATE: str = (
         'Недоступны следующие переменные окружения: {}. '
         'Работа бота остановлена.'
     )
     if len(tokens_are_none) > 0:
-        logging.critical(ERROR_MESSAGE_TEMPLATE.format(tokens_are_none))
-        raise TokensAreNone(
-            'Отсутствуют критичные для работы приложения токены.'
+        sys.exit(
+            logging.critical(ERROR_MESSAGE_TEMPLATE.format(tokens_are_none))
         )
 
 
@@ -78,8 +85,8 @@ def send_message(bot, message: str) -> None:
             text=message,
         )
         logging.debug(f'Успешно отправлено сообщение: "{message}".')
-    except Exception as error:
-        logging.error(
+    except TelegramError as error:
+        raise TelegramError(
             f'Не удалось отправить сообщение: "{message}". Ошибка: {error}.'
         )
 
@@ -94,6 +101,7 @@ def get_api_answer(timestamp: int):
     payload: Dict[str, int] = {'from_date': timestamp}
 
     try:
+        logging.debug('Начали запрос к API.')
         response = requests.get(
             ENDPOINT,
             headers=HEADERS,
@@ -179,9 +187,14 @@ def main() -> None:
         except Exception as error:
             logging_message: str = f'Сбой в работе программы: {error}'
             logging.error(logging_message)
-            send_message(bot, logging_message)
 
-        time.sleep(RETRY_PERIOD)
+            # Чтобы не было цикла отправки сообщения
+            # о невозможности отправки сообщения:
+            if not isinstance(error, TelegramError):
+                send_message(bot, logging_message)
+
+        finally:
+            time.sleep(RETRY_PERIOD)
 
 
 if __name__ == '__main__':
